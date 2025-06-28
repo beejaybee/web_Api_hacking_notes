@@ -77,8 +77,8 @@ The First Step to attacking any website is conducting recconaissance or simply p
     - Its DNS mode is used for subdomain bruteforcing In this mode, you can use the flag -d to specify the domain you want to brute-force and -w to specify the wordlist you want to use: **gobuster dns -d target_domain -w wordlist**
     - Once you’ve found a good number of subdomains, you can discover more by identifying patterns.
     - For example, if you find two subdomains of example.com named 1.example.com and 3.example.com, you can guess that 2.example.com is probably also a valid subdomain.
-    - A good tool for automating this process is Altdns (https://github.com/infosec-au altdns/), which discovers subdomains with names that are permutations of other subdomain names.
-    - altdns -i subdomains.txt -o data_output -w words.txt -r -s results_output.txt
+    - A good tool for automating this process is Altdns (https://github.com/infosec-au-altdns/), which discovers subdomains with names that are permutations of other subdomain names.
+    - **altdns -i subdomains.txt -o data_output -w words.txt -r -s results_output.txt**
     - In addition, you can find more subdomains based on your knowledge about the company’s technology stack. For example, if you’ve already learned that example.com uses Jenkins, you can check if jenkins.example.com is a valid subdomain.
     - Also look for subdomains of subdomains. After you’ve found, say, dev.example.com, you might find subdomains like 1.dev.example.com
     - You can find subdomains of subdomains by running enumeration tools recursively: add the results of your first run to your Known Domains list and run the tool again.
@@ -239,4 +239,9 @@ The First Step to attacking any website is conducting recconaissance or simply p
     - StackShare (https://stackshare.io/) is an online platform that allows developers to share the tech they use. You can use it to find out if the organization’s developers have posted their tech stack.
     - Retire.js is a tool that detects outdated JavaScript libraries and Node.js packages. 
     - You can use it to check for outdated technologies on a site.
-    
+
+
+# ADVICE FROM VICKIE LI
+
+*But when you’re starting out, I recommend that you do recon manually with individual tools or write your own automated recon scripts to learn about the process.*
+
