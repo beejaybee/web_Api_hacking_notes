@@ -26,7 +26,7 @@ The First Step to attacking any website is conducting recconaissance or simply p
     Uses cases:
     - look for all of a company's subdomain by doing **site:*.google.com**
     - You can also look for special endpoints that can lead to vulnerabilities **site:example.com inurl:app/kibana** finds a vulnerable kibana app.
-    - Google can find company resources hosted by a third party online, such as Amazon S3 buckets **site:s3.amazonaws.com COMPANY_NAME**
+    - Google can find company resources hosted by a third party online, such as Amazon S3 buckets **site:s3.amazonaws.com COMPANY_NAME** 
     - Look for special extensions that could indicate a sensitive file. In addition to .log, which often indicates log files, search for .php, cfm, asp, .jsp, and .pl
     - Finally, you can also combine search terms for a more accurate search.
 
