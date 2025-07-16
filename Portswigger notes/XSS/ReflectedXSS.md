@@ -59,4 +59,4 @@ https://insecure-website.com/search?term=gift
 - Finally, if you succeed in finding a payload that appears to work within Burp Repeater, transfer the attack to a real browser by pasting the URL into the address bar, or by modifying the request in Burp Proxy's intercept view, and see if the injected JavaScript is indeed executed. 
 - Often, it is best to execute some simple JavaScript like alert(document.domain) which will trigger a visible popup within the browser if the attack succeeds.
 
-# 
+ 

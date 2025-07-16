@@ -311,4 +311,81 @@ Pepe removed the need of the throw statement completely by using type errors to 
 - This lab reflects your input in a JavaScript URL, but all is not as it seems. 
 - This initially seems like a trivial challenge; however, the application is blocking some characters in an attempt to prevent XSS attacks.
 - To solve the lab, perform a cross-site scripting attack that calls the alert function with the string 1337 contained somewhere in the alert message.
--
+- Personally for me this lab is extremely difficult, Even though I don't wanna copy solution 
+- I ended watching a 24 minutes video solution before solving it
+- Link to the video: https://www.youtube.com/watch?v=bCpBD--GCtQ
+- In the video, I learnt so much about javascript parameters and arguments, You can watch it too.
+- Anothing I learnt is that, always check for everywhere for user input'
+- The Input could be Url parameters too
+- Final payload
+```
+post?postId=5&%27},x=x=>{throw/**/onerror=alert,1337},toString=x,window+%27%27,{x:%27
+```
+- As you can see The payload starts after the postId parameter
+
+# Making use of HTML-encoding
+- When the XSS context is some existing JavaScript within a quoted tag attribute, such as an event handler, it is possible to make use of HTML-encoding to work around some input filters.
+- When the browser has parsed out the HTML tags and attributes within a response, it will perform HTML-decoding of tag attribute values before they are processed any further. 
+- If the server-side application blocks or sanitizes certain characters that are needed for a successful XSS exploit, you can often bypass the input validation by HTML-encoding those characters.
+- For example, if the XSS context is as follows:
+```
+<a href="#" onclick="... var input='controllable data here'; ...">
+```
+- and the application blocks or escapes single quote characters, you can use the following payload to break out of the JavaScript string and execute your own script:
+```
+&apos;-alert(document.domain)-&apos;
+```
+- The ```&apos;``` sequence is an HTML entity representing an apostrophe or single quote. 
+- Because the browser HTML-decodes the value of the onclick attribute before the JavaScript is interpreted, the entities are decoded as quotes, which become string delimiters, and so the attack succeeds.
+
+# XSS in JavaScript template literals
+- JavaScript template literals are string literals that allow embedded JavaScript expressions. 
+- The embedded expressions are evaluated and are normally concatenated into the surrounding text. 
+- Template literals are encapsulated in backticks instead of normal quotation marks, and embedded expressions are identified using the ${...} syntax.
+- For example, the following script will print a welcome message that includes the user's display name:
+```
+document.getElementById('message').innerText = `Welcome, ${user.displayName}.`;
+```
+- When the XSS context is into a JavaScript template literal, there is no need to terminate the literal. 
+- Instead, you simply need to use the ${...} syntax to embed a JavaScript expression that will be executed when the literal is processed. For example, 
+- if the XSS context is as follows:
+```
+<script>
+...
+var input = `controllable data here`;
+...
+</script>
+```
+then you can use the following payload to execute JavaScript without terminating the template literal:
+```
+${alert(document.domain)}
+```
+
+# Lab 12: Reflected XSS into a template literal with angle brackets, single, double quotes, backslash and backticks Unicode-escaped
+- This lab contains a reflected cross-site scripting vulnerability in the search blog functionality. 
+- The reflection occurs inside a template string with angle brackets, single, and double quotes HTML encoded, and backticks escaped. 
+- To solve this lab, perform a cross-site scripting attack that calls the alert function inside the template string.
+- Lab not hard, Coz the context is template literals, I love using template literals When I was learning javascript and REACT
+- Final solution to this Lab
+```
+,${alert(1)}
+```
+
+# Lab: Stored XSS into anchor href attribute with double quotes HTML-encoded
+- This lab contains a stored cross-site scripting vulnerability in the comment functionality. 
+- To solve this lab, submit a comment that calls the alert function when the comment author name is clicked. 
+- solution: ```javascript:alert(document.domain)
+
+# Lab: Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped
+- This lab contains a stored cross-site scripting vulnerability in the comment functionality.
+- To solve this lab, submit a comment that calls the alert function when the comment author name is clicked.
+- This lab was not that clear but I was able to solve the lab with this payload
+```
+&apos;-alert(document.domain)-&apos;
+```
+- Where ```&apos;``` stands for single quote.
+- The explanation of this kind of bug is above. In making use of HTML encoding
+- Why does HTML encoding works in this situation?
+- It works because the overall context was inside HTML event handler, the javascript context was inside the HTML a tag.
+- Confusing right?, LEts go solve some more labs.
+- All XssContext Labs have been completed
