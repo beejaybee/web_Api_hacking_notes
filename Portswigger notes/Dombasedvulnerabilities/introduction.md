@@ -61,7 +61,7 @@ https://www.innocent-website.com/example#https://www.evil-user.net
 # The following kinds of data can also be used as sources to exploit taint-flow vulnerabilities:
 - Reflected data 
 - Stored data 
-- Web messages LABS
+- Web messages 
 
 # Which sinks can lead to DOM-based vulnerabilities?
 The following list provides a quick overview of common DOM-based vulnerabilities and an example of a sink that can lead to each one. For a more comprehensive list of relevant sinks, please refer to the vulnerability-specific pages by clicking the links below.
