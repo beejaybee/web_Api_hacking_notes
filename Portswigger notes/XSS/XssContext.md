@@ -374,7 +374,7 @@ ${alert(document.domain)}
 # Lab: Stored XSS into anchor href attribute with double quotes HTML-encoded
 - This lab contains a stored cross-site scripting vulnerability in the comment functionality. 
 - To solve this lab, submit a comment that calls the alert function when the comment author name is clicked. 
-- solution: ```javascript:alert(document.domain)
+- solution: ```javascript:alert(document.domain)```
 
 # Lab: Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped
 - This lab contains a stored cross-site scripting vulnerability in the comment functionality.

@@ -1,0 +1,19 @@
+# What is DOM-based local file-path manipulation?
+- Local file-path manipulation vulnerabilities arise when a script passes attacker-controllable data to a file-handling API as the filename parameter. 
+- An attacker may be able to use this vulnerability to construct a URL that, if visited by another user, will cause the user's browser to open an arbitrary local file.
+
+# What is the impact of DOM-based local file-path manipulation?
+- The potential impact of this vulnerability depends on how the website uses the opened file:
+- If the website reads data from the file, the attacker may be able to retrieve this data.
+- If the website writes specific data to a sensitive file, the attacker may also be able write their own data to the file, which could be the configuration file of the operating system, for example.
+- In both of these cases, the actual exploitability of the potential vulnerability may depend on other suitable functionality being present on the website.
+
+# Which sinks can lead to DOM-based local file-path manipulation vulnerabilities?
+- The following are some of the main sinks can lead to DOM-based local file path manipulation vulnerabilities:
+
+- FileReader.readAsArrayBuffer()
+- FileReader.readAsBinaryString()
+- FileReader.readAsDataURL()
+- FileReader.readAsText()
+- FileReader.readAsFile()
+- FileReader.root.getFile()
