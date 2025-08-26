@@ -557,3 +557,87 @@ def handleResponse(req, interesting):
 
     11. If you can't log in, resend the pair of password reset emails and repeat the process.
     12. If you successfully log in, visit the admin panel and delete the user carlos to solve the lab.
+
+# Lab: Inconsistent handling of exceptional input 
+- This lab doesn't adequately validate user input. 
+- You can exploit a logic flaw in its account registration process to gain access to administrative functionality. 
+- To solve the lab, access the admin panel and delete the user carlos.
+
+# My Solution
+- This lab was crazy, I did not understand at first
+- We can't actually take over over the admin, That was what I was thinking
+- I learnt one important thing today, using burp turbo intruder to do directory fuzzing
+- I tried chaanging username and get user already exist
+- I tried adding a long username and I got invalid username
+- I then tried longer email and it worked but my email was truncated on my account page.
+- I copied the the truncated part to my notepad and noticed that the length of the truncated part is 255
+- Now the admin functionality is not leaked anywhere, So I had to fuzz the directory
+- I sent the home page to burp turbo intruder and added /%s and used the following code:
+```
+def queueRequests(target, wordlists):
+
+    # if the target supports HTTP/2, use engine=Engine.BURP2 to trigger the single-packet attack
+    # if they only support HTTP/1, use Engine.THREADED or Engine.BURP instead
+    # for more information, check out https://portswigger.net/research/smashing-the-state-machine
+    engine = RequestEngine(endpoint=target.endpoint,
+                           concurrentConnections=10,
+                           engine=Engine.BURP2
+                           )
+
+    directories= [p.strip() for p in open('/home/kali/SecLists-master/Discovery/DNS/namelist.txt', 'r').readlines()]
+    
+    for directory in directories:
+        engine.queue(target.req, directory)
+ 
+
+
+def handleResponse(req, interesting):
+    table.add(req)
+```
+- I got the admin page and it said only @wannacry.com email can view the admin page
+- Because the server email accept all subdomain, I crafted an email that is very long but the truncated 255 ends with @wannacry.com, below is the email, I crafted
+```
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%40dontwannacry.com.exploit-0a3b00ea03912ac38065fd4901db00f8.exploit-server.net
+```
+- And mail was sent to the email client and I logged in
+- The web page greeted me with admin panel, I accessed it and deleted carloss to solve the lab
+
+# LAB SOLUTION
+- While proxying traffic through Burp, open the lab and go to the "Target" > "Site map" tab. 
+- Right-click on the lab domain and select "Engagement tools" > "Discover content" to open the content discovery tool.
+- Click "Session is not running" to start the content discovery. After a short while, look at the "Site map" tab in the dialog. Notice that it discovered the path /admin.
+- Try to browse to /admin. Although you don't have access, an error message indicates that DontWannaCry users do.
+- Go to the account registration page. Notice the message telling DontWannaCry employees to use their company email address.
+- From the button in the lab banner, open the email client. Make a note of the unique ID in the domain name for your email server (@YOUR-EMAIL-ID.web-security-academy.net).
+- Go back to the lab and register with an exceptionally long email address in the format:
+    - very-long-string@YOUR-EMAIL-ID.web-security-academy.net
+    - The very-long-string should be at least 200 characters long.
+
+- Go to the email client and notice that you have received a confirmation email. Click the link to complete the registration process.
+- Log in and go to the "My account" page. Notice that your email address has been truncated to 255 characters.
+- Log out and go back to the account registration page.
+- Register a new account with another long email address, but this time include dontwannacry.com as a subdomain in your email address as follows:
+- very-long-string@dontwannacry.com.YOUR-EMAIL-ID.web-security-academy.net
+- Make sure that the very-long-string is the right number of characters so that the "m" at the end of @dontwannacry.com is character 255 exactly.
+- Go to the email client and click the link in the confirmation email that you have received. 
+- Log in to your new account and notice that you now have access to the admin panel. 
+- The confirmation email was successfully sent to your email client, but the application server truncated the address associated with your account to 255 characters. 
+- As a result, you have been able to register with what appears to be a valid @dontwannacry.com address. You can confirm this from the "My account" page.
+- Go to the admin panel and delete carlos to solve the lab.
+
+
+# Making flawed assumptions about user behavior
+- One of the most common root causes of logic vulnerabilities is making flawed assumptions about user behavior. 
+- This can lead to a wide range of issues where developers have not considered potentially dangerous scenarios that violate these assumptions. 
+- In this section, we'll provide some cautionary examples of common assumptions that should be avoided and demonstrate how they can lead to dangerous logic flaws.
+
+# Trusted users won't always remain trustworthy
+- Applications may appear to be secure because they implement seemingly robust measures to enforce the business rules. 
+- Unfortunately, some applications make the mistake of assuming that, having passed these strict controls initially, the user and their data can be trusted indefinitely. 
+- This can result in relatively lax enforcement of the same controls from that point on.
+- If business rules and security measures are not applied consistently throughout the application, this can lead to potentially dangerous loopholes that may be exploited by an attacker.
+
+# Lab: Inconsistent security controls
+- This lab's flawed logic allows arbitrary users to access administrative functionality that should only be available to company employees. 
+- To solve the lab, access the admin panel and delete the user carlos.
+
