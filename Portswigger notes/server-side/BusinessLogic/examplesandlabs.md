@@ -156,7 +156,7 @@ Solution
 - With burp runing, I sent a Post /cart with the cheapeast product or any product
 - In Burp, I sent the request to burp repeater and noticed that I can only add a two digit quantity
 - I changed the quantity to 99 and sent the request to burp turbo intuder, in intruder I used the code below
-```
+```python
 def queueRequests(target, wordlists):
 
     # if the target supports HTTP/2, use engine=Engine.BURP2 to trigger the single-packet attack
